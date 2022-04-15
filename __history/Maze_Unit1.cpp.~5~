@@ -1,0 +1,146 @@
+//---------------------------------------------------------------------------
+#include <vcl.h>
+#pragma hdrstop
+
+#include "Maze_Unit1.h"
+#include "stdio.h"
+//---------------------------------------------------------------------------
+#pragma package(smart_init)
+#pragma resource "*.dfm"
+#define possible_direction 8
+#define max(x,y) (x)>(y)?(x):(y);
+int maze[20][20];
+int m,p,top;
+struct position *Stack;
+TForm1 *Form1;
+//---------------------------------------------------------------------------
+__fastcall TForm1::TForm1(TComponent* Owner)
+	: TForm(Owner)
+{
+}
+//---------------------------------------------------------------------------
+
+
+struct offset
+{
+	int dx,dy;
+};
+enum directions {N,NE,E,SE,S,SW,W,NW};
+struct offset move[possible_direction];
+struct position
+{
+	int x,y;
+	directions dir;
+};
+int StackEmpty(){
+	return -1;
+}
+int StackFull()
+{
+	return -1;
+}
+struct position pop()
+{
+	if(top==-1)StackEmpty();
+	else return Stack[top--];
+}
+ void push(struct position data)
+{
+	if(top==(m*p-1))StackFull();
+	else 	Stack[++top]=data;
+}
+void path(int m,int p)
+{
+	Stack=new struct position [m*p];
+	struct position step;
+	int i,j,u,v,ex;
+	AnsiString out;
+	directions d;
+	step.x=1;
+	step.y=1;
+	step.dir=E;
+	push(step);
+	while(top!=-1)
+	{
+		step=pop();
+		i=step.x;
+		j=step.y;
+		d=step.dir;
+		while(d<=NW)
+		{
+			u=i+move[d].dx;
+			v=j+move[d].dy;
+			if((u==m)&& (v==p))
+			{
+				for(int l=top;l>=0;l--)
+				Form1->Memo1->Lines->Add(IntToStr(Stack[l].x));
+				//搜尋完畢
+				return;
+			}
+			if(!(maze[u][v]))
+			{
+			maze[u][v]=3;
+			   step.x=i;
+				step.y=j;
+				step.dir=directions(d+1);
+				push(step);
+				i=u;
+				j=v;
+				d=N;
+			}
+			else d=directions(d+1);
+
+		}
+	}
+		Form1->Memo1->Lines->Add("此迷宮無解");
+}
+
+void __fastcall TForm1::Button3Click(TObject *Sender)
+{
+	 FILE *fp;
+	 AnsiString out, fname;
+	 int  i, j;
+	 if(OpenDialog1->Execute())
+	 {
+		fname = OpenDialog1->FileName;
+		fp = fopen(fname.c_str(), "r+");//c_str函数的傳回值是 const char *, 即把string轉成const char *
+		fscanf(fp, "%d %d", &m, &p);    // Reda in two integers m & n
+		Memo1->Lines->Add("m="+IntToStr(m));
+		Memo1->Lines->Add("n="+IntToStr(p));
+		for (i=1; i<=m; i++)      // Reda in m*n 0/1's into maze[][]
+			for (j=1; j<=p; j++)
+				fscanf(fp, "%d", &maze[i][j]);
+		Memo1->Lines->Add("-------Map("+IntToStr(m)+" * "+IntToStr(p)+")------");
+		for (i=0; i<m+2; i++)      // Print out maze[][] in Memo1
+		{
+			out ="";
+			for (j=0; j<p+2; j++)
+			{
+				if(i==0 || j==0 || j==p+1 || i== m+1)
+					maze[i][j]=2;
+				out += "  "+IntToStr(maze[i][j]);
+			}
+			Memo1->Lines->Add(out);
+		}// Print out maze[][] in StringGrid1
+		StringGrid1->RowCount = m+3;
+		StringGrid1->ColCount = p+3;
+		for (i=1; i<=m+2; i++)
+		{
+			for (j=1; j<=p+2; j++)
+			{
+				StringGrid1->Cells[j-1][i-1] = maze[i][j];
+			}
+		}
+		fclose(fp);
+
+	 }
+	 else  Memo1->Lines->Add("Nothing happens.");
+}
+
+//---------------------------------------------------------------------------
+
+void __fastcall TForm1::Button4Click(TObject *Sender)
+{
+	path(m,p);
+}
+//---------------------------------------------------------------------------
